@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum AbsenceMethod {
+  FACE
+  BUTTON
+}
+
+enum DeductionType {
+  PERCENTAGE
+  NOMINAL
+}
+
+enum GBookType {
+  PERSONAL
+  GROUP
+}
+
+enum GBookStatus {
+  WILLCOME
+  ALREADYCOME
+}
+
+model Roles {
+  id          String  @id @default(uuid())
+  name        String
+  description String? @db.Text
+  permissions String  @db.Text
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model Positions {
+  id          String  @id @default(uuid())
+  name        String
+  description String? @db.Text
+  allowance   Float   @default(0)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model Users {
+  id            String        @id @default(uuid())
+  name          String
+  username      String        @unique
+  password      String
+  email         String
+  phone         String
+  nip           String
+  absenceMethod AbsenceMethod @default(BUTTON)
+  face          String?       @db.Text
+
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  Absence   Absence[]
+  Shift     Shift     @relation(fields: [shiftId], references: [id])
+  shiftId   String
+}
+
+model GuestBook {
+  id            String      @id @default(uuid())
+  title         String
+  recipientName String?
+  description   String?     @db.Text
+  type          GBookType
+  status        GBookStatus
+  checkIn       DateTime
+
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  participant Participant[]
+}
+
+model Participant {
+  id          String @id @default(uuid())
+  name        String
+  address     String @db.Text
+  phone       String
+  description String
+
+  isActive    Boolean   @default(true)
+  GuestBook   GuestBook @relation(fields: [guestBookId], references: [id])
+  guestBookId String
+}
+
+model AbsenceStatus {
+  id            String        @id @default(uuid())
+  name          String
+  deduction     Float
+  deductionType DeductionType
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+  Absence   Absence[]
+}
+
+model Absence {
+  id                String        @id @default(uuid())
+  absenceMethod     AbsenceMethod
+  date              DateTime // tanggal absensi
+  checkIn           DateTime? // jam masuk
+  checkOut          DateTime? // jam pulang
+  lateMinutes       Int           @default(0) // menit keterlambatan
+  earlyLeaveMinutes Int           @default(0) // menit izin pulang cepat
+  description       String?       @db.Text
+  geo               String
+  accuracy          Int
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  Users           Users          @relation(fields: [usersId], references: [id])
+  usersId         String
+  AbsenceStatus   AbsenceStatus? @relation(fields: [absenceStatusId], references: [id])
+  absenceStatusId String?
+}
+
+model Shift {
+  id        String   @id @default(uuid())
+  name      String // misal: "Shift Pagi"
+  startTime DateTime // jam kerja mulai (hanya jam & menit yg dipakai)
+  endTime   DateTime // jam kerja selesai
+  users     Users[]
+}
