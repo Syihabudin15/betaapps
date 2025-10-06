@@ -25,3 +25,7 @@ export const IFormInput = dynamic(
     ssr: false,
   }
 );
+export const Logout = dynamic(
+  () => import("@/components/Utils/Utils").then((d) => d.LogoutButton),
+  { ssr: false }
+);

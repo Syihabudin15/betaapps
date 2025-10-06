@@ -42,36 +42,42 @@ model Roles {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  Users     Users[]
 }
 
 model Positions {
-  id          String  @id @default(uuid())
-  name        String
-  description String? @db.Text
-  allowance   Float   @default(0)
+  id            String        @id @default(uuid())
+  name          String
+  description   String?       @db.Text
+  allowance     Float         @default(0)
+  allowanceType DeductionType @default(NOMINAL)
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  Users     Users[]
 }
 
 model Users {
-  id            String        @id @default(uuid())
-  name          String
-  username      String        @unique
-  password      String
-  email         String
-  phone         String
-  nip           String
-  absenceMethod AbsenceMethod @default(BUTTON)
-  face          String?       @db.Text
+  id              String        @id @default(uuid())
+  name            String
+  username        String        @unique
+  password        String
+  email           String
+  phone           String
+  nip             String
+  absenceMethod   AbsenceMethod @default(BUTTON)
+  face            String?       @db.Text
+  principalSalary Int           @default(0)
 
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now())
-  Absence   Absence[]
-  Shift     Shift     @relation(fields: [shiftId], references: [id])
-  shiftId   String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now())
+  Absence     Absence[]
+  Roles       Roles     @relation(fields: [rolesId], references: [id])
+  rolesId     String
+  Positions   Positions @relation(fields: [positionsId], references: [id])
+  positionsId String
 }
 
 model GuestBook {
@@ -86,13 +92,12 @@ model GuestBook {
   isActive    Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now())
-  participant Participant[]
+  Participant Participant[]
 }
 
 model Participant {
   id          String @id @default(uuid())
   name        String
-  address     String @db.Text
   phone       String
   description String
 
@@ -105,7 +110,7 @@ model AbsenceStatus {
   id            String        @id @default(uuid())
   name          String
   deduction     Float
-  deductionType DeductionType
+  deductionType DeductionType @default(NOMINAL)
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now())
@@ -113,16 +118,11 @@ model AbsenceStatus {
 }
 
 model Absence {
-  id                String        @id @default(uuid())
-  absenceMethod     AbsenceMethod
-  date              DateTime // tanggal absensi
-  checkIn           DateTime? // jam masuk
-  checkOut          DateTime? // jam pulang
-  lateMinutes       Int           @default(0) // menit keterlambatan
-  earlyLeaveMinutes Int           @default(0) // menit izin pulang cepat
-  description       String?       @db.Text
-  geo               String
-  accuracy          Int
+  id            String        @id @default(uuid())
+  absenceMethod AbsenceMethod
+  checkOut      DateTime? // jam pulang
+  description   String?       @db.Text
+  geo           String
 
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -132,10 +132,13 @@ model Absence {
   absenceStatusId String?
 }
 
-model Shift {
-  id        String   @id @default(uuid())
-  name      String // misal: "Shift Pagi"
-  startTime DateTime // jam kerja mulai (hanya jam & menit yg dipakai)
-  endTime   DateTime // jam kerja selesai
-  users     Users[]
+model AllowanceList {
+  id            String        @id @default(uuid())
+  name          String
+  allowance     Int
+  allowanceType DeductionType @default(NOMINAL)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 }

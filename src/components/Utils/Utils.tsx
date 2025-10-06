@@ -1,5 +1,15 @@
-import { FilterFilled, KeyOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Input, TableProps } from "antd";
+import {
+  DashboardFilled,
+  FilterFilled,
+  KeyOutlined,
+  LogoutOutlined,
+  ReadFilled,
+  UserOutlined,
+} from "@ant-design/icons";
+import { Button, Drawer, Input, Modal, Select, TableProps } from "antd";
+import { useState } from "react";
+import { IPermission } from "../Pages/IInterfaces";
+import { icons } from "antd/es/image/PreviewGroup";
 
 export const TableTitle = ({
   title,
@@ -12,9 +22,11 @@ export const TableTitle = ({
   functionsRight?: React.ReactNode[];
   onSearch?: Function;
 }) => {
+  const [open, setOpen] = useState(false);
+
   return (
     <div>
-      <div className="border-blue-400 border-b text-2xl font-bold font-mono">
+      <div className="border-blue-400 border-b-2 text-xl font-bold font-mono py-1">
         <p>{title}</p>
       </div>
       <div className="flex gap-2 justify-between items-center mt-1">
@@ -28,7 +40,12 @@ export const TableTitle = ({
             ))}
           {functionsRight && (
             <div className="block sm:hidden">
-              <Button size="small" type="primary" icon={<FilterFilled />}>
+              <Button
+                size="small"
+                type="primary"
+                icon={<FilterFilled />}
+                onClick={() => setOpen(true)}
+              >
                 Filters
               </Button>
             </div>
@@ -40,6 +57,18 @@ export const TableTitle = ({
           onChange={(e) => onSearch && onSearch(e.target.value)}
         />
       </div>
+      <Drawer
+        title="DATA FILTERS"
+        // placement="left"
+        width={"50%"}
+        open={open}
+        onClose={() => setOpen(false)}
+      >
+        <div className="flex flex-wrap gap-2">
+          {functionsRight &&
+            functionsRight.map((fr, i) => <div key={i}>{fr}</div>)}
+        </div>
+      </Drawer>
     </div>
   );
 };
@@ -70,23 +99,129 @@ export const FormInput = ({
   classname,
   value,
   onChange,
+  type,
+  option,
+  disable,
 }: {
   label: string;
   classname?: string;
   value: any;
   onChange?: Function;
+  type?: "number" | "date" | "datetime-local" | "area" | "options" | "password";
+  option?: { label: any; value: any }[];
+  disable?: boolean;
 }) => {
   return (
     <div className={`flex gap-2 items-center ${classname ? classname : ""}`}>
-      <div className="text-right w-32">
+      <div className="text-right w-40">
         <p>{label} :</p>
       </div>
       <div className="flex-1">
-        <Input
-          value={value}
-          onChange={(e) => onChange && onChange(e.target.value)}
-        />
+        {!type && (
+          <Input
+            value={value}
+            onChange={(e) => onChange && onChange(e.target.value)}
+            disabled={disable}
+          />
+        )}
+        {type && type === "number" && (
+          <Input
+            value={value}
+            type="number"
+            onChange={(e) => onChange && onChange(e.target.value)}
+            disabled={disable}
+          />
+        )}
+        {type && type === "date" && (
+          <Input
+            value={value}
+            type="date"
+            onChange={(e) => onChange && onChange(e.target.value)}
+            disabled={disable}
+          />
+        )}
+        {type && type === "datetime-local" && (
+          <Input
+            value={value}
+            type="datetime-local"
+            onChange={(e) => onChange && onChange(e.target.value)}
+            disabled={disable}
+          />
+        )}
+        {type && type === "area" && (
+          <Input.TextArea
+            value={value}
+            onChange={(e) => onChange && onChange(e.target.value)}
+            disabled={disable}
+          />
+        )}
+        {type && type === "options" && (
+          <Select
+            value={value}
+            options={option}
+            onChange={(e) => onChange && onChange(e)}
+            disabled={disable}
+            style={{ width: "100%" }}
+          />
+        )}
+        {type && type === "password" && (
+          <Input.Password
+            value={value}
+            onChange={(e) => onChange && onChange(e.target.value)}
+            disabled={disable}
+          />
+        )}
       </div>
+    </div>
+  );
+};
+
+export const LogoutButton = () => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string>();
+
+  const handleOK = async () => {
+    setLoading(true);
+    await fetch("/api/auth", { method: "DELETE" })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 200) {
+          window && window.location.replace("/");
+        } else {
+          setMsg(res.msg);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        setMsg("Internal Server Error!");
+      });
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <Button
+        size="small"
+        danger
+        icon={<LogoutOutlined />}
+        type="primary"
+        onClick={() => setOpen(true)}
+      >
+        Logout
+      </Button>
+      <Modal
+        open={open}
+        onCancel={() => setOpen(false)}
+        title="Konfirmasi Logout"
+        onOk={() => handleOK()}
+        loading={loading}
+      >
+        <div className="my-4" style={{ lineHeight: 2 }}>
+          <p>Lanjutkan untuk keluar dari sistem BETA?</p>
+          <p className="italic text-red-500">{msg}</p>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -95,15 +230,33 @@ export const MenuItems = [
   {
     label: "Dashboard",
     key: "/dashboard",
+    icon: <DashboardFilled />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Buku Tamu",
+    key: "/guestbook",
+    icon: <ReadFilled />,
+    style: { color: "#fefefe" },
   },
   {
     label: "Role Management",
     key: "/roles",
     icon: <KeyOutlined />,
+    style: { color: "#fefefe" },
   },
   {
     label: "User Management",
     key: "/users",
     icon: <UserOutlined />,
+    style: { color: "#fefefe" },
   },
 ];
+
+export const getMenuItems = (permissions: string) => {
+  const userMenu = JSON.parse(permissions) as IPermission[];
+  const fix = MenuItems.filter((menu) =>
+    userMenu.some((um) => um.path === menu.key)
+  );
+  return fix;
+};

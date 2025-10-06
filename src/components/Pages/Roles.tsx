@@ -16,6 +16,7 @@ import { IActionProps, IPageProps } from "@/components/Utils/IInterfaces";
 import { IPermission } from "@/components/Pages/IInterfaces";
 import Link from "next/link";
 import { GenerateQueries } from "@/components/lib";
+import useApp from "antd/es/app/useApp";
 const { Paragraph } = Typography;
 
 export default function PageRole() {
@@ -144,14 +145,31 @@ export default function PageRole() {
             title="ROLES MANAGEMENT"
             functionsLeft={[
               <Link key={"add"} href={"/roles/create"}>
-                <Button icon={<PlusCircleFilled />} size="small" type="primary">
+                <Button
+                  icon={<PlusCircleFilled />}
+                  size="small"
+                  type="primary"
+                  key={"create"}
+                >
                   New
                 </Button>
               </Link>,
-              <Button icon={<ExportOutlined />} size="small" type="primary">
+              <Button
+                icon={<ExportOutlined />}
+                size="small"
+                type="primary"
+                key={"export"}
+              >
                 Export
               </Button>,
             ]}
+            onSearch={(value: any) => {
+              const filters = pageProps.filters.filter(
+                (q) => q.key !== "search"
+              );
+              filters.push({ key: "search", value });
+              setPageProps((prev) => ({ ...prev, filters }));
+            }}
           />
         )}
         bordered
@@ -181,14 +199,67 @@ export default function PageRole() {
           },
         }}
       />
+      {selected.data && (
+        <DeleteRole
+          open={selected.openDelete}
+          setOpen={(value: boolean) =>
+            setSelected((prev) => ({ ...prev, openDelete: value }))
+          }
+          getData={getData}
+          data={selected.data}
+        />
+      )}
     </div>
   );
 }
 
-const DeleteRole = () => {
+const DeleteRole = ({
+  open,
+  setOpen,
+  data,
+  getData,
+}: {
+  open: boolean;
+  setOpen: Function;
+  data: Roles;
+  getData: Function;
+}) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleOK = async () => {
+    setLoading(true);
+    await fetch("/api/roles?id=" + data.id, { method: "DELETE" })
+      .then((res) => res.json())
+      .then(async (res) => {
+        if (res.status === 200) {
+          Modal.success({ title: "BERHASIL", content: res.msg });
+          setOpen(false);
+          await getData();
+        } else {
+          Modal.error({ title: "ERROR !!!", content: res.msg });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        Modal.error({ title: "ERROR !!!", content: "Server Error" });
+      });
+    await getData();
+    setLoading(false);
+  };
+
   return (
     <div>
-      <Modal title={"KONFIRMASI HAPUS ROLE"}></Modal>
+      <Modal
+        title={"KONFIRMASI HAPUS ROLE " + data.name}
+        open={open}
+        onCancel={() => setOpen(false)}
+        loading={loading}
+        onOk={() => handleOK()}
+      >
+        <div className="m-4">
+          <p>Lanjutkan untuk menghapus data role {data.name}</p>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -196,14 +267,15 @@ const DeleteRole = () => {
 export const UpsertRole = ({ role }: { role?: Roles }) => {
   const [data, setData] = useState<Roles>(role || defaultRole);
   const [menus, setMenus] = useState<IPermission[]>(
-    role ? JSON.parse(role.permissions) : defaultMenu
+    role ? MergeMenu(defaultMenu, JSON.parse(role.permissions)) : defaultMenu
   );
   const [loading, setLoading] = useState(false);
+  const { modal } = useApp();
 
   useEffect(() => {
     const newMenu = menus
       .filter((m) => m.access.length !== 0)
-      .map((m) => ({ path: m.path, access: m.access }));
+      .map((m) => ({ name: m.name, path: m.path, access: m.access }));
     setData((prev: Roles) => ({
       ...prev,
       permissions: JSON.stringify(newMenu),
@@ -219,14 +291,17 @@ export const UpsertRole = ({ role }: { role?: Roles }) => {
       .then((res) => res.json())
       .then((res) => {
         if (res.status === 200) {
-          Modal.success({ title: "BERHASIL", content: res.msg });
+          modal.success({ title: "BERHASIL", content: res.msg });
+          setTimeout(() => {
+            window && window.location.replace("/roles");
+          }, 1000);
         } else {
-          Modal.error({ title: "ERROR!!!", content: res.msg });
+          modal.error({ title: "ERROR!!!", content: res.msg });
         }
       })
       .catch((err) => {
         console.log(err);
-        Modal.error({ title: "ERROR!!!", content: "Server Error!" });
+        modal.error({ title: "ERROR!!!", content: "Server Error!" });
       });
     setLoading(false);
   };
@@ -263,7 +338,7 @@ export const UpsertRole = ({ role }: { role?: Roles }) => {
 
   return (
     <Spin spinning={loading}>
-      <div className="p-2 my-2">
+      <div className="p-2 my-2 min-w-[70vw]">
         <div className="border-b-2 border-green-500">
           <p className="font-bold text-2xl">
             {role
@@ -283,6 +358,7 @@ export const UpsertRole = ({ role }: { role?: Roles }) => {
             classname="flex-1"
             value={data.description}
             onChange={(e: any) => setData({ ...data, description: e })}
+            type="area"
           />
         </div>
         <div>
@@ -328,3 +404,14 @@ const defaultRole: Roles = {
   createdAt: new Date(),
   updatedAt: new Date(),
 };
+
+function MergeMenu(menuItems: any[], data: IPermission[]) {
+  const mergedMenu = menuItems.map((item) => {
+    const found = data.find((r) => r.path === item.path);
+    return {
+      ...item,
+      access: found ? found.access : [],
+    };
+  });
+  return mergedMenu;
+}

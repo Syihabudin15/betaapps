@@ -11,3 +11,18 @@ export const UpsertRole = dynamic(
     ssr: false,
   }
 );
+export const PageUsers = dynamic(() => import("@/components/Pages/Users"), {
+  ssr: false,
+});
+export const PageGuestBook = dynamic(
+  () => import("@/components/Pages/GuestBook"),
+  {
+    ssr: false,
+  }
+);
+export const TableParticipants = dynamic(
+  () => import("@/components/Pages/Participants"),
+  {
+    ssr: false,
+  }
+);

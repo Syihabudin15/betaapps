@@ -12,3 +12,8 @@ export interface IActionProps<T> {
   openUpsert: boolean;
   openDelete: boolean;
 }
+
+export interface IAbsenceGeo {
+  masuk: { lat: number; lon: number; acc: number };
+  pulang: { lat: number; lon: number; acc: number };
+}

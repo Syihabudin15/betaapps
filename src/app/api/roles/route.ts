@@ -64,7 +64,7 @@ export const PUT = async (req: NextRequest) => {
       data: { ...saveRoles, updatedAt: new Date() },
     });
 
-    return Response(200, `Data Role ${data.name} berhasil ditambahkan`);
+    return Response(200, `Data Role ${data.name} berhasil diupdate`);
   } catch (err) {
     console.log(err);
     return Response(500, "Server Error!");
