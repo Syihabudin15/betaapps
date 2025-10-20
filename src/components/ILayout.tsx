@@ -84,11 +84,11 @@ const MyMenu = ({ collapse }: { collapse: boolean }) => {
     <div>
       {!collapse && (
         <div className="p-2 m-1 rounded bg-gradient-to-br from-blue-500 to-green-500 flex flex-col gap-2">
-          <p className="font-bold">SYIHABUDIN TSANI</p>
+          <p className="font-bold">{user ? user.name : "UNDEFINED"}</p>
           <div className="flex gap-3 text-xs opacity-80">
-            <span>IT</span>
+            <span>{user ? user.username : "UNDEFINED"}</span>
             <span>|</span>
-            <span>DEVELOPER</span>
+            <span>{user ? user.Roles.name : "UNDEFINED"}</span>
           </div>
         </div>
       )}
