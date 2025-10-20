@@ -11,9 +11,16 @@ export interface IActionProps<T> {
   data: T | undefined;
   openUpsert: boolean;
   openDelete: boolean;
+  openProses?: boolean;
 }
 
 export interface IAbsenceGeo {
   masuk: { lat: number; lon: number; acc: number };
   pulang: { lat: number; lon: number; acc: number };
+}
+
+export interface IGeoAbsence {
+  lat: string;
+  long: string;
+  acc: string;
 }

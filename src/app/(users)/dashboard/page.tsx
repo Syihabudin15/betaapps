@@ -1,3 +1,5 @@
+import { PageDashboard } from "@/components/Pages";
+
 export default function Page() {
-  return <div>Dashboard</div>;
+  return <PageDashboard />;
 }

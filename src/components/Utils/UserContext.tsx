@@ -30,6 +30,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             updatedAt: res.data.updatedAt,
             Roles: res.data.Roles,
             rolesId: res.data.rolesId,
+            principalSalary: res.data.principalSalary,
+            positionsId: res.data.positionId,
+            statusPTKP: res.data.statusPTKP,
           });
         } else {
           if (pathname !== "/") {

@@ -33,6 +33,45 @@ enum GBookStatus {
   ALREADYCOME
 }
 
+enum PermitStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AbsenceStatus {
+  HADIR
+  CUTI
+  SAKIT
+  PERDIN
+  LEMBUR
+}
+
+enum PermitAbsenceStatus {
+  TERLAMBAT
+  PULANGCEPAT
+  CUTI
+  SAKIT
+  PERDIN
+  LEMBUR
+}
+
+model AppsConfig {
+  id                 String @id @default(uuid())
+  lateDeduction      Int    @default(10000)
+  fastLeaveDeduction Int    @default(0)
+  alphaDeduction     Int    @default(0)
+  shiftStart         Int    @default(8)
+  shiftEnd           Int    @default(17)
+  tolerance          Int    @default(5)
+  lastAbsence        Int    @default(17)
+  meterTolerance     Int?   @default(0)
+  lat                String @default("0")
+  long               String @default("0")
+
+  updatedAt DateTime @default(now())
+}
+
 model Roles {
   id          String  @id @default(uuid())
   name        String
@@ -69,15 +108,19 @@ model Users {
   absenceMethod   AbsenceMethod @default(BUTTON)
   face            String?       @db.Text
   principalSalary Int           @default(0)
+  statusPTKP      String        @default("TK")
 
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
   Absence     Absence[]
-  Roles       Roles     @relation(fields: [rolesId], references: [id])
+  Roles       Roles        @relation(fields: [rolesId], references: [id])
   rolesId     String
-  Positions   Positions @relation(fields: [positionsId], references: [id])
+  Positions   Positions    @relation(fields: [positionsId], references: [id])
   positionsId String
+  Approver    PermitApps[] @relation("Approver")
+  Requester   PermitApps[] @relation("Requester")
+  Logs        Logs[]
 }
 
 model GuestBook {
@@ -106,32 +149,6 @@ model Participant {
   guestBookId String
 }
 
-model AbsenceStatus {
-  id            String        @id @default(uuid())
-  name          String
-  deduction     Float
-  deductionType DeductionType @default(NOMINAL)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now())
-  Absence   Absence[]
-}
-
-model Absence {
-  id            String        @id @default(uuid())
-  absenceMethod AbsenceMethod
-  checkOut      DateTime? // jam pulang
-  description   String?       @db.Text
-  geo           String
-
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  Users           Users          @relation(fields: [usersId], references: [id])
-  usersId         String
-  AbsenceStatus   AbsenceStatus? @relation(fields: [absenceStatusId], references: [id])
-  absenceStatusId String?
-}
-
 model AllowanceList {
   id            String        @id @default(uuid())
   name          String
@@ -141,4 +158,77 @@ model AllowanceList {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+}
+
+model DeductionList {
+  id            String        @id @default(uuid())
+  name          String
+  deduction     Int
+  deductionType DeductionType @default(NOMINAL)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
+
+model Absence {
+  id                 String        @id @default(uuid())
+  absenceMethod      AbsenceMethod
+  checkOut           DateTime? // jam pulang
+  geoIn              String
+  geoOut             String?
+  absenceStatus      AbsenceStatus @default(HADIR)
+  description        String?
+  lateDeduction      Int           @default(0)
+  fastLeaveDeduction Int           @default(0)
+  perdinAllowance    Int           @default(0)
+  lemburAllowance    Int           @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  Users     Users    @relation(fields: [usersId], references: [id])
+  usersId   String
+}
+
+model Insentif {
+  id           String        @id @default(uuid())
+  name         String
+  insentif     Int
+  insentifType DeductionType @default(NOMINAL)
+
+  isActive   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  PermitApps PermitApps[]
+}
+
+model PermitApps {
+  id            String               @id @default(uuid())
+  absenceStatus PermitAbsenceStatus?
+  description   String?              @db.Text
+  files         String?
+  status        PermitStatus         @default(PENDING)
+  nominal       Int                  @default(0)
+  startDate     DateTime?
+  endDate       DateTime?
+
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Approver    Users?    @relation("Approver", fields: [approverId], references: [id])
+  approverId  String?
+  Requester   Users     @relation("Requester", fields: [requesterId], references: [id])
+  requesterId String
+  Insentif    Insentif? @relation(fields: [insentifId], references: [id])
+  insentifId  String?
+}
+
+model Logs {
+  id        String   @id @default(uuid())
+  action    String
+  model     String
+  geo       String?
+  createdAt DateTime @default(now())
+  Users     Users?   @relation(fields: [usersId], references: [id])
+  usersId   String?
 }

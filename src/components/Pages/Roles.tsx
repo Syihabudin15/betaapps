@@ -17,6 +17,8 @@ import { IPermission } from "@/components/Pages/IInterfaces";
 import Link from "next/link";
 import { GenerateQueries } from "@/components/lib";
 import useApp from "antd/es/app/useApp";
+import { usePathname } from "next/navigation";
+import { useAccess } from "../Utils/Auth";
 const { Paragraph } = Typography;
 
 export default function PageRole() {
@@ -33,6 +35,8 @@ export default function PageRole() {
     openUpsert: false,
     openDelete: false,
   });
+  const pathname = usePathname();
+  const { hasAccess } = useAccess(pathname);
 
   const getData = async () => {
     setPageProps((prev) => ({ ...prev, loading: true }));
@@ -98,7 +102,7 @@ export default function PageRole() {
             >
               {displayText.map((p) => (
                 <>
-                  {p.path}: [{p.access.join(",")}];
+                  {p.name}: [{p.access.join(",")}];
                   <br />
                 </>
               ))}
@@ -115,22 +119,26 @@ export default function PageRole() {
       render(value, record, index) {
         return (
           <div className="flex justify-center gap-2 flex-wrap">
-            <Link href={`/roles/${record.id}`}>
+            {hasAccess("update") && (
+              <Link href={`/roles/${record.id}`}>
+                <Button
+                  icon={<EditFilled />}
+                  type="primary"
+                  size="small"
+                ></Button>
+              </Link>
+            )}
+            {hasAccess("delete") && (
               <Button
-                icon={<EditFilled />}
+                icon={<DeleteFilled />}
                 type="primary"
+                danger
                 size="small"
+                onClick={() =>
+                  setSelected({ ...selected, data: record, openDelete: true })
+                }
               ></Button>
-            </Link>
-            <Button
-              icon={<DeleteFilled />}
-              type="primary"
-              danger
-              size="small"
-              onClick={() =>
-                setSelected({ ...selected, data: record, openDelete: true })
-              }
-            ></Button>
+            )}
           </div>
         );
       },
@@ -145,15 +153,18 @@ export default function PageRole() {
             title="ROLES MANAGEMENT"
             functionsLeft={[
               <Link key={"add"} href={"/roles/create"}>
-                <Button
-                  icon={<PlusCircleFilled />}
-                  size="small"
-                  type="primary"
-                  key={"create"}
-                >
-                  New
-                </Button>
+                {hasAccess("write") && (
+                  <Button
+                    icon={<PlusCircleFilled />}
+                    size="small"
+                    type="primary"
+                    key={"create"}
+                  >
+                    New
+                  </Button>
+                )}
               </Link>,
+
               <Button
                 icon={<ExportOutlined />}
                 size="small"
@@ -316,7 +327,7 @@ export const UpsertRole = ({ role }: { role?: Roles }) => {
         return (
           <div>
             <Checkbox.Group
-              options={["read", "write", "update", "delete"]}
+              options={["read", "write", "update", "delete", "proses"]}
               value={record.access}
               onChange={(e) => {
                 setMenus((prev: any[]) => {

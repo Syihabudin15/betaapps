@@ -59,7 +59,7 @@ export async function refreshToken(request: NextRequest) {
   // Ambil durasi dan threshold dari env
   const refreshMinutes = Number(process.env.SESSION_REFRESH_MINUTES) || 60;
   const thresholdSeconds =
-    Number(process.env.SESSION_THRESHOLD_SECONDS) || 1 * 60 * 60;
+    Number(process.env.SESSION_THRESHOLD_SECONDS) || 60 * 60 * 30;
 
   // Hitung sisa waktu
   const timeRemaining = new Date(parsed.expires).getTime() - Date.now();

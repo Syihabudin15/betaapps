@@ -19,6 +19,8 @@ import moment from "moment-timezone";
 import TableParticipants from "./Participants";
 import useApp from "antd/es/app/useApp";
 import { HookAPI } from "antd/es/modal/useModal";
+import { usePathname } from "next/navigation";
+import { useAccess } from "../Utils/Auth";
 const { Paragraph } = Typography;
 
 export default function PageGuestBook() {
@@ -35,6 +37,8 @@ export default function PageGuestBook() {
     openUpsert: false,
     openDelete: false,
   });
+  const pathname = usePathname();
+  const { hasAccess } = useAccess(pathname);
 
   const getData = async () => {
     setPageProps((prev) => ({ ...prev, loading: true }));
@@ -143,27 +147,31 @@ export default function PageGuestBook() {
       render(value, record, index) {
         return (
           <div className="flex justify-center gap-2 flex-wrap">
-            <Button
-              icon={<EditFilled />}
-              type="primary"
-              size="small"
-              onClick={() =>
-                setSelected((prev) => ({
-                  ...prev,
-                  openUpsert: true,
-                  data: record,
-                }))
-              }
-            ></Button>
-            <Button
-              icon={<DeleteFilled />}
-              type="primary"
-              danger
-              size="small"
-              onClick={() =>
-                setSelected({ ...selected, data: record, openDelete: true })
-              }
-            ></Button>
+            {hasAccess("update") && (
+              <Button
+                icon={<EditFilled />}
+                type="primary"
+                size="small"
+                onClick={() =>
+                  setSelected((prev) => ({
+                    ...prev,
+                    openUpsert: true,
+                    data: record,
+                  }))
+                }
+              ></Button>
+            )}
+            {hasAccess("delete") && (
+              <Button
+                icon={<DeleteFilled />}
+                type="primary"
+                danger
+                size="small"
+                onClick={() =>
+                  setSelected({ ...selected, data: record, openDelete: true })
+                }
+              ></Button>
+            )}
           </div>
         );
       },
@@ -177,21 +185,24 @@ export default function PageGuestBook() {
           <TableTitle
             title="BUKU TAMU"
             functionsLeft={[
-              <Button
-                icon={<PlusCircleFilled />}
-                size="small"
-                type="primary"
-                onClick={() =>
-                  setSelected((prev) => ({
-                    ...prev,
-                    openUpsert: true,
-                    data: undefined,
-                  }))
-                }
-                key={"create"}
-              >
-                New
-              </Button>,
+              <div key={"add"}>
+                {hasAccess("write") && (
+                  <Button
+                    icon={<PlusCircleFilled />}
+                    size="small"
+                    type="primary"
+                    onClick={() =>
+                      setSelected((prev) => ({
+                        ...prev,
+                        openUpsert: true,
+                        data: undefined,
+                      }))
+                    }
+                  >
+                    New
+                  </Button>
+                )}
+              </div>,
               <Button
                 icon={<ExportOutlined />}
                 size="small"

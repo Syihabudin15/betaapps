@@ -1,0 +1,6 @@
+- Permohonan/Permit -> Jika ada potongan tetapi status [APPROVED] maka tidak akan dikenakan potongan;
+                    -> Jika ada potongan tetapi status [REJECTED] maka tetap akan dikenakan potongan;
+                    -> Jika ada tambahan dan status [APPROVED] maka akan ada tambahan;
+                    -> Jika ada tambahan dan status [REJECTED] maka tidak akan ada tambahan;
+                    -> Permohonan hanya akan berlaku untuk hari permohonan tersebut dibuat. walaupun di proses pada hari berikutnya, permohonan tersebut akan merubah status untuk hari sebelumnya (saat permohonan dibuat); 
+                    -> 

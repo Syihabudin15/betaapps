@@ -1,15 +1,23 @@
 import {
+  AreaChartOutlined,
+  AuditOutlined,
+  BarChartOutlined,
+  BranchesOutlined,
   DashboardFilled,
+  DollarCircleFilled,
+  DollarCircleOutlined,
+  FallOutlined,
   FilterFilled,
   KeyOutlined,
   LogoutOutlined,
   ReadFilled,
+  RiseOutlined,
+  SettingFilled,
   UserOutlined,
 } from "@ant-design/icons";
 import { Button, Drawer, Input, Modal, Select, TableProps } from "antd";
 import { useState } from "react";
 import { IPermission } from "../Pages/IInterfaces";
-import { icons } from "antd/es/image/PreviewGroup";
 
 export const TableTitle = ({
   title,
@@ -85,7 +93,7 @@ export function GenerateColumns<T>(
         return {
           ["style"]: {
             textAlign: "center",
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: "bold",
           },
         };
@@ -102,18 +110,33 @@ export const FormInput = ({
   type,
   option,
   disable,
+  showSearch,
+  prefix,
+  suffix,
+  widthLeft,
 }: {
   label: string;
   classname?: string;
   value: any;
   onChange?: Function;
-  type?: "number" | "date" | "datetime-local" | "area" | "options" | "password";
+  type?:
+    | "number"
+    | "date"
+    | "datetime-local"
+    | "area"
+    | "options"
+    | "password"
+    | "optionGroup";
   option?: { label: any; value: any }[];
   disable?: boolean;
+  showSearch?: boolean;
+  prefix?: any;
+  suffix?: any;
+  widthLeft?: number;
 }) => {
   return (
     <div className={`flex gap-2 items-center ${classname ? classname : ""}`}>
-      <div className="text-right w-40">
+      <div className={`text-right ${widthLeft ? "w-" + widthLeft : "w-40"}`}>
         <p>{label} :</p>
       </div>
       <div className="flex-1">
@@ -122,6 +145,8 @@ export const FormInput = ({
             value={value}
             onChange={(e) => onChange && onChange(e.target.value)}
             disabled={disable}
+            prefix={prefix}
+            suffix={suffix}
           />
         )}
         {type && type === "number" && (
@@ -130,6 +155,8 @@ export const FormInput = ({
             type="number"
             onChange={(e) => onChange && onChange(e.target.value)}
             disabled={disable}
+            prefix={prefix}
+            suffix={suffix}
           />
         )}
         {type && type === "date" && (
@@ -138,6 +165,8 @@ export const FormInput = ({
             type="date"
             onChange={(e) => onChange && onChange(e.target.value)}
             disabled={disable}
+            prefix={prefix}
+            suffix={suffix}
           />
         )}
         {type && type === "datetime-local" && (
@@ -146,6 +175,8 @@ export const FormInput = ({
             type="datetime-local"
             onChange={(e) => onChange && onChange(e.target.value)}
             disabled={disable}
+            prefix={prefix}
+            suffix={suffix}
           />
         )}
         {type && type === "area" && (
@@ -162,6 +193,24 @@ export const FormInput = ({
             onChange={(e) => onChange && onChange(e)}
             disabled={disable}
             style={{ width: "100%" }}
+            showSearch={showSearch}
+            filterOption={(input, option) =>
+              option?.label.toLowerCase().includes(input.toLowerCase())
+            }
+          />
+        )}
+        {type && type === "optionGroup" && (
+          <Select
+            value={value}
+            options={option}
+            onChange={(e) => onChange && onChange(e)}
+            disabled={disable}
+            style={{ width: "100%" }}
+            mode="tags"
+            showSearch={showSearch}
+            filterOption={(input, option) =>
+              option?.label.toLowerCase().includes(input.toLowerCase())
+            }
           />
         )}
         {type && type === "password" && (
@@ -169,6 +218,8 @@ export const FormInput = ({
             value={value}
             onChange={(e) => onChange && onChange(e.target.value)}
             disabled={disable}
+            prefix={prefix}
+            suffix={suffix}
           />
         )}
       </div>
@@ -234,21 +285,75 @@ export const MenuItems = [
     style: { color: "#fefefe" },
   },
   {
+    label: "Daily Report",
+    key: "/daily-report",
+    icon: <AreaChartOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Monthly Report",
+    key: "/report",
+    icon: <BarChartOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
     label: "Buku Tamu",
     key: "/guestbook",
     icon: <ReadFilled />,
     style: { color: "#fefefe" },
   },
   {
-    label: "Role Management",
+    label: "Izin & Permohonan",
+    key: "/permit-absence",
+    icon: <AuditOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Permohonan Insentif",
+    key: "/permit-insentif",
+    icon: <DollarCircleFilled />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Manajemen Insentif",
+    key: "/insentif",
+    icon: <DollarCircleOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Manajemen Tunjangan",
+    key: "/allowances",
+    icon: <RiseOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Manajemen Potongan",
+    key: "/deductions",
+    icon: <FallOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Manajemen User",
+    key: "/users",
+    icon: <UserOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Manajemen Posisi",
+    key: "/positions",
+    icon: <BranchesOutlined />,
+    style: { color: "#fefefe" },
+  },
+  {
+    label: "Manajemen Role",
     key: "/roles",
     icon: <KeyOutlined />,
     style: { color: "#fefefe" },
   },
   {
-    label: "User Management",
-    key: "/users",
-    icon: <UserOutlined />,
+    label: "Configuration",
+    key: "/config",
+    icon: <SettingFilled />,
     style: { color: "#fefefe" },
   },
 ];

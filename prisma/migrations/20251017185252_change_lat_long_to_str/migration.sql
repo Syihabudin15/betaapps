@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `appsconfig` MODIFY `lat` VARCHAR(191) NOT NULL DEFAULT '0',
+    MODIFY `long` VARCHAR(191) NOT NULL DEFAULT '0';

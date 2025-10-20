@@ -11,15 +11,18 @@ import {
 } from "@ant-design/icons";
 import { GenerateColumns } from "@/components/Utils/Utils";
 import { useEffect, useState } from "react";
-import { AbsenceMethod, Roles, Users } from "@prisma/client";
+import { AbsenceMethod, Positions, Roles, Users } from "@prisma/client";
 import { IActionProps, IPageProps } from "@/components/Utils/IInterfaces";
 import { IUserRole } from "@/components/Pages/IInterfaces";
 import { GenerateQueries } from "@/components/lib";
 import moment from "moment-timezone";
 import useApp from "antd/es/app/useApp";
 import { HookAPI } from "antd/es/modal/useModal";
+import { IDRFormat, IDRToNumber } from "../Utils/Services";
+import { useAccess } from "../Utils/Auth";
+import { usePathname } from "next/navigation";
 
-export default function PageGuestBook() {
+export default function PageUser() {
   const [pageProps, setPageProps] = useState<IPageProps<IUserRole>>({
     page: 1,
     pageSize: 50,
@@ -34,6 +37,9 @@ export default function PageGuestBook() {
     openDelete: false,
   });
   const [roles, setRoles] = useState<Roles[]>([]);
+  const [positions, setPositions] = useState<Positions[]>([]);
+  const pathname = usePathname();
+  const { hasAccess } = useAccess(pathname);
   const { modal } = useApp();
 
   const getData = async () => {
@@ -57,6 +63,9 @@ export default function PageGuestBook() {
       await fetch("/api/roles?page=1&pageSize=100")
         .then((res) => res.json())
         .then((res) => setRoles(res.data));
+      await fetch("/api/position?page=1&pageSize=100")
+        .then((res) => res.json())
+        .then((res) => setPositions(res.data));
     })();
   }, []);
 
@@ -82,7 +91,7 @@ export default function PageGuestBook() {
       title: "NIP",
       key: "nip",
       dataIndex: "nip",
-      width: 100,
+      width: 120,
       className: "text-center",
     },
     {
@@ -104,6 +113,22 @@ export default function PageGuestBook() {
       width: 200,
     },
     {
+      title: "NO TELEPON",
+      key: "phone",
+      dataIndex: "phone",
+      width: 120,
+    },
+    {
+      title: "GAJI POKOK",
+      key: "principalSalary",
+      dataIndex: "principalSalary",
+      width: 120,
+      className: "text-right",
+      render(value, record, index) {
+        return <>{IDRFormat(value)}</>;
+      },
+    },
+    {
       title: "UPDATED AT",
       key: "updatedAt",
       dataIndex: "updatedAt",
@@ -121,27 +146,31 @@ export default function PageGuestBook() {
       render(value, record, index) {
         return (
           <div className="flex justify-center gap-2 flex-wrap">
-            <Button
-              icon={<EditFilled />}
-              type="primary"
-              size="small"
-              onClick={() =>
-                setSelected((prev) => ({
-                  ...prev,
-                  openUpsert: true,
-                  data: record,
-                }))
-              }
-            ></Button>
-            <Button
-              icon={<DeleteFilled />}
-              type="primary"
-              danger
-              size="small"
-              onClick={() =>
-                setSelected({ ...selected, data: record, openDelete: true })
-              }
-            ></Button>
+            {hasAccess("update") && (
+              <Button
+                icon={<EditFilled />}
+                type="primary"
+                size="small"
+                onClick={() =>
+                  setSelected((prev) => ({
+                    ...prev,
+                    openUpsert: true,
+                    data: record,
+                  }))
+                }
+              ></Button>
+            )}
+            {hasAccess("delete") && (
+              <Button
+                icon={<DeleteFilled />}
+                type="primary"
+                danger
+                size="small"
+                onClick={() =>
+                  setSelected({ ...selected, data: record, openDelete: true })
+                }
+              ></Button>
+            )}
           </div>
         );
       },
@@ -155,21 +184,25 @@ export default function PageGuestBook() {
           <TableTitle
             title="USERS MANAGEMENT"
             functionsLeft={[
-              <Button
-                icon={<PlusCircleFilled />}
-                size="small"
-                type="primary"
-                onClick={() =>
-                  setSelected((prev) => ({
-                    ...prev,
-                    openUpsert: true,
-                    data: undefined,
-                  }))
-                }
-                key={"create"}
-              >
-                New
-              </Button>,
+              <>
+                {hasAccess("write") && (
+                  <Button
+                    icon={<PlusCircleFilled />}
+                    size="small"
+                    type="primary"
+                    onClick={() =>
+                      setSelected((prev) => ({
+                        ...prev,
+                        openUpsert: true,
+                        data: undefined,
+                      }))
+                    }
+                    key={"create"}
+                  >
+                    New
+                  </Button>
+                )}
+              </>,
               <Button
                 icon={<ExportOutlined />}
                 size="small"
@@ -257,6 +290,7 @@ export default function PageGuestBook() {
         key={selected.data ? selected.data.id : "create"}
         modal={modal}
         roles={roles}
+        positions={positions}
       />
     </div>
   );
@@ -322,6 +356,7 @@ const UpsertUsers = ({
   record,
   modal,
   roles,
+  positions,
 }: {
   open: boolean;
   setOpen: Function;
@@ -329,6 +364,7 @@ const UpsertUsers = ({
   record?: Users;
   modal: HookAPI;
   roles: Roles[];
+  positions: Positions[];
 }) => {
   const [data, setData] = useState<Users>(
     record ? { ...record, password: "" } : defaultUser
@@ -424,6 +460,45 @@ const UpsertUsers = ({
             type="password"
           />
           <IFormInput
+            label="Jabatan"
+            classname="flex-1"
+            value={data.positionsId}
+            onChange={(e: any) => setData({ ...data, positionsId: e })}
+            type="options"
+            option={positions.map((r) => ({ label: r.name, value: r.id }))}
+          />
+          <IFormInput
+            label="Gaji Pokok"
+            classname="flex-1"
+            value={IDRFormat(data.principalSalary)}
+            onChange={(e: any) =>
+              setData({
+                ...data,
+                principalSalary: Number(e) < 0 ? 0 : IDRToNumber(e),
+              })
+            }
+          />
+          <IFormInput
+            label="Status PTKP"
+            classname="flex-1"
+            value={data.statusPTKP}
+            type="options"
+            option={[
+              { label: "TK (Tidak Kawin)", value: "TK" },
+              { label: "TK/0 (Tidak Kawin)", value: "TK/0" },
+              { label: "K/0 (Kawin 0 Tanggungan)", value: "K/0" },
+              { label: "K/1 (Kawin 1 Tanggungan)", value: "K/1" },
+              { label: "K/2 (Kawin 2 Tanggungan)", value: "K/2" },
+              { label: "K/3 (Kawin 3 Tanggungan)", value: "K/3" },
+            ]}
+            onChange={(e: any) =>
+              setData({
+                ...data,
+                statusPTKP: e,
+              })
+            }
+          />
+          <IFormInput
             label="Role"
             classname="flex-1"
             value={data.rolesId}
@@ -459,6 +534,9 @@ const defaultUser: Users = {
   rolesId: "",
   absenceMethod: "BUTTON",
   face: null,
+  positionsId: "",
+  principalSalary: 0,
+  statusPTKP: "TK",
 
   isActive: true,
   createdAt: new Date(),

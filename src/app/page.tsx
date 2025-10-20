@@ -31,7 +31,7 @@ export default function Home() {
     setLoading(false);
   };
   return (
-    <div className="flex justify-around gap-5 items-center bg-gradient-to-br from-gray-50 to-blue-200">
+    <div className="flex justify-around gap-5 items-center bg-gradient-to-br from-gray-50 to-blue-200 min-h-[100vh]">
       <div className="flex-2 hidden sm:flex items-center justify-center">
         <img src={"/images/beta-text.png"} alt="App Login Image" />
       </div>

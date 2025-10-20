@@ -16,21 +16,29 @@ export const GET = async (req: NextRequest) => {
         },
       },
     });
-    const tidakHadir = await prisma.users.count({
+    const permitInsentif = await prisma.permitApps.count({
       where: {
         isActive: true,
-        Absence: {
-          none: {
-            createdAt: {
-              gte: moment().startOf("day").toDate(),
-              lte: moment().endOf("day").toDate(),
-            },
-            absenceStatusId: null,
-          },
+        status: "PENDING",
+        insentifId: { not: null },
+        createdAt: {
+          gte: moment().startOf("day").toDate(),
+          lte: moment().endOf("day").toDate(),
         },
       },
     });
-    return Response(200, "OK", { tamu, tidakHadir });
+    const permitAbsence = await prisma.permitApps.count({
+      where: {
+        isActive: true,
+        status: "PENDING",
+        absenceStatus: { not: null },
+        createdAt: {
+          gte: moment().startOf("day").toDate(),
+          lte: moment().endOf("day").toDate(),
+        },
+      },
+    });
+    return Response(200, "OK", { tamu, permitInsentif, permitAbsence });
   } catch (err) {
     console.log(err);
     return Response(500, "Internal Server Error");

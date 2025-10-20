@@ -1,12 +1,18 @@
 "use client";
-import { Badge } from "antd";
+import {
+  AuditOutlined,
+  DollarCircleOutlined,
+  ReadOutlined,
+} from "@ant-design/icons";
+import { Badge, Tooltip } from "antd";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function INotif() {
   const [notif, setNotif] = useState({
     tamu: 0,
-    tidakHadir: 0,
+    permitInsentif: 0,
+    permitAbsence: 0,
   });
 
   const getData = async () => {
@@ -21,28 +27,53 @@ export default function INotif() {
     })();
     setInterval(async () => {
       await getData();
-    }, 2000);
+    }, 10000);
   }, []);
 
   return (
     <div className="flex gap-2">
-      <Badge showZero count={notif.tidakHadir} size="small">
-        <div className="bg-gray-50 font-mono italic font-semibold py-1 px-3 text-xs rounded">
-          <p>TIDAK HADIR</p>
-        </div>
-      </Badge>
-      <Badge showZero count={0} size="small">
-        <div className="bg-gray-50 font-mono italic font-semibold py-1 px-3 text-xs rounded">
-          <p>IZIN</p>
-        </div>
-      </Badge>
-      <Link href={"/guestbook"}>
-        <Badge showZero count={notif.tamu} size="small">
-          <div className="bg-gray-50 font-mono italic font-semibold py-1 px-3 text-xs rounded">
-            <p>TAMU</p>
-          </div>
-        </Badge>
-      </Link>
+      <BadgeNotif
+        url="/permit-absence"
+        title="Izin & Permohonan"
+        count={notif.permitAbsence}
+        icon={<AuditOutlined />}
+      />
+      <BadgeNotif
+        url="/permit-insentif"
+        title="Claim Insentif"
+        count={notif.permitInsentif}
+        icon={<DollarCircleOutlined />}
+      />
+      <BadgeNotif
+        url="/guestbook"
+        title="Tamu hari ini"
+        count={notif.tamu}
+        icon={<ReadOutlined />}
+      />
     </div>
   );
 }
+
+const BadgeNotif = ({
+  url,
+  count,
+  icon,
+  title,
+}: {
+  url: string;
+  count: number;
+  icon: React.ReactNode;
+  title: string;
+}) => {
+  return (
+    <Link href={url}>
+      <Tooltip title={title}>
+        <Badge showZero count={count} size="small">
+          <div className="bg-gray-50 font-mono italic font-semibold py-1 px-3 text-xs rounded">
+            {icon}
+          </div>
+        </Badge>
+      </Tooltip>
+    </Link>
+  );
+};
