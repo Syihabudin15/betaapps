@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal, Select, Table } from "antd";
+import { Button, Modal, Select, Table, Tag } from "antd";
 import { IFormInput, TableTitle } from "@/components/Utils";
 import {
   DeleteFilled,
@@ -88,35 +88,46 @@ export default function PageUser() {
       },
     },
     {
-      title: "NIP",
-      key: "nip",
-      dataIndex: "nip",
-      width: 120,
-      className: "text-center",
-    },
-    {
       title: "NAMA LENGKAP",
       key: "name",
       dataIndex: "name",
       width: 200,
+      render(value, record, index) {
+        return (
+          <div>
+            <p>{value}</p>
+            <p className="italic opacity-70">@{record.Roles.name}</p>
+          </div>
+        );
+      },
     },
     {
-      title: "USERNAME",
+      title: "NIP & USERNAME",
       key: "username",
       dataIndex: "username",
       width: 150,
+      render(value, record, index) {
+        return (
+          <div>
+            <p>{value}</p>
+            <p className="italic opacity-70">NIP:{record.nip}</p>
+          </div>
+        );
+      },
     },
     {
-      title: "EMAIL",
+      title: "Kontak",
       key: "email",
       dataIndex: "email",
       width: 200,
-    },
-    {
-      title: "NO TELEPON",
-      key: "phone",
-      dataIndex: "phone",
-      width: 120,
+      render(value, record, index) {
+        return (
+          <div>
+            <p>{value}</p>
+            <p>{record.phone}</p>
+          </div>
+        );
+      },
     },
     {
       title: "GAJI POKOK",
@@ -129,13 +140,19 @@ export default function PageUser() {
       },
     },
     {
-      title: "UPDATED AT",
+      title: "ABSEN",
       key: "updatedAt",
       dataIndex: "updatedAt",
       width: 100,
       className: "text-center",
       render(value, record, index) {
-        return <>{moment(value).format("DD/MM/YYYY")}</>;
+        return (
+          <div className="flex justify-center">
+            <Tag color={record.absenceMethod === "BUTTON" ? "blue" : "green"}>
+              {record.absenceMethod}
+            </Tag>
+          </div>
+        );
       },
     },
     {

@@ -89,32 +89,17 @@ export default function PageFullReport() {
       },
     },
     {
-      title: "NIP",
-      dataIndex: "nip",
-      key: "nip",
-      width: 150,
-    },
-    {
       title: "NAMA LENGKAP",
       dataIndex: "name",
       key: "name",
       width: 150,
-    },
-    {
-      title: "HARI KERJA",
-      dataIndex: "hadir",
-      key: "hadir",
-      width: 100,
-      className: "text-center",
       render(value, record, index) {
-        const find = pageProps.filters.find((f) => f.key === "month");
-        const tempDate = moment(find?.value);
-        const count = GetDailyActivities(
-          tempDate.format("YYYY-MM"),
-          record,
-          holidays
+        return (
+          <div>
+            <p>{value}</p>
+            <p className="italic opacity-70">{record.nip}</p>
+          </div>
         );
-        return <>{count.filter((d) => !d.isRedDate).length}</>;
       },
     },
     {
@@ -122,7 +107,6 @@ export default function PageFullReport() {
       dataIndex: "hadir",
       key: "hadir",
       width: 100,
-      className: "text-center",
       render(value, record, index) {
         const find = pageProps.filters.find((f) => f.key === "month");
         const tempDate = moment(find?.value);
@@ -131,7 +115,13 @@ export default function PageFullReport() {
           record,
           holidays
         );
-        return <>{count.filter((d) => d.Absence).length}</>;
+        const hariKerja = count.filter((d) => !d.isRedDate).length;
+        return (
+          <div>
+            <p>{count.filter((d) => d.Absence).length} Hadir</p>
+            <p className="italic opacity-70">dari {hariKerja} hari</p>
+          </div>
+        );
       },
     },
     {

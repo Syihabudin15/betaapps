@@ -60,16 +60,18 @@ export default function PageDailyReport() {
       },
     },
     {
-      title: "NIP",
-      dataIndex: "nip",
-      key: "nip",
-      width: 150,
-    },
-    {
       title: "NAMA LENGKAP",
       dataIndex: "name",
       key: "name",
       width: 150,
+      render(value, record, index) {
+        return (
+          <div>
+            <p>{value}</p>
+            <p className="italic opacity-70">{record.nip}</p>
+          </div>
+        );
+      },
     },
     {
       title: "ABSENSI",

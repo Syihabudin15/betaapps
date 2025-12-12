@@ -5,7 +5,7 @@ import {
   DoubleRightOutlined,
   MenuOutlined,
 } from "@ant-design/icons";
-import { App, Button, ConfigProvider, Menu } from "antd";
+import { App, Button, ConfigProvider, Drawer, Menu } from "antd";
 import { IAbsence, INotif, Logout } from "./Utils";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ import { getMenuItems } from "./Utils/Utils";
 
 export default function ILayout({ children }: { children: React.ReactNode }) {
   const [collapse, setCollapse] = useState(true);
+  const [openMobile, setOpenMobile] = useState(false);
 
   return (
     <App>
@@ -44,7 +45,10 @@ export default function ILayout({ children }: { children: React.ReactNode }) {
                 <Logout />
               </div>
               <div className="block sm:hidden">
-                <Button icon={<MenuOutlined />}></Button>
+                <Button
+                  icon={<MenuOutlined />}
+                  onClick={() => setOpenMobile(true)}
+                ></Button>
               </div>
             </div>
             <div className="flex gap-1">
@@ -70,6 +74,13 @@ export default function ILayout({ children }: { children: React.ReactNode }) {
               <div className="min-w-96">{children}</div>
             </div>
           </div>
+          <Drawer
+            open={openMobile}
+            width={"80vw"}
+            onClose={() => setOpenMobile(false)}
+          >
+            <MyMenu collapse={false} mobile />
+          </Drawer>
           <IAbsence />
         </UserProvider>
       </ConfigProvider>
@@ -77,12 +88,18 @@ export default function ILayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-const MyMenu = ({ collapse }: { collapse: boolean }) => {
+const MyMenu = ({
+  collapse,
+  mobile,
+}: {
+  collapse: boolean;
+  mobile?: boolean;
+}) => {
   const router = useRouter();
   const user = useUser();
   return (
     <div>
-      {!collapse && (
+      {!collapse && !mobile && (
         <div className="p-2 m-1 rounded bg-gradient-to-br from-blue-500 to-green-500 flex flex-col gap-2">
           <p className="font-bold">{user ? user.name : "UNDEFINED"}</p>
           <div className="flex gap-3 text-xs opacity-80">
@@ -95,9 +112,9 @@ const MyMenu = ({ collapse }: { collapse: boolean }) => {
       <Menu
         mode="inline"
         style={{
-          backgroundColor: "transparent",
-          height: "72vh",
-          overflowY: "scroll",
+          ...(!mobile && { backgroundColor: "transparent" }),
+          ...(!mobile && { height: "72vh" }),
+          ...(!mobile && { overflowY: "scroll" }),
         }}
         theme="dark"
         inlineCollapsed={collapse}

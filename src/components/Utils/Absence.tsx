@@ -2,17 +2,20 @@
 
 import { ClockCircleFilled } from "@ant-design/icons";
 import { Button, Modal, Spin, Tooltip } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "./UserContext";
 import { FormInput } from "./Utils";
 import moment from "moment-timezone";
 import Link from "next/link";
-import { Absence } from "@prisma/client";
+import { Absence, Users } from "@prisma/client";
+import * as faceapi from "face-api.js";
 
 export default function AbsenceUI() {
   const [open, setOpen] = useState(false);
   const user = useUser();
   const [absen, setAbsen] = useState<Absence>(defaultAbsence);
+  const [openFace, setOpenFace] = useState(false);
+  const [modelLoad, setModelLoad] = useState(false);
 
   const [coords, setCoords] = useState<{
     lat: number;
@@ -76,6 +79,21 @@ export default function AbsenceUI() {
   useEffect(() => {
     (async () => {
       await getData();
+    })();
+  }, []);
+
+  useEffect(() => {
+    const MODEL_URL = "/models";
+    (async () => {
+      setLoading(true);
+      console.log("Start loaded models");
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      ]);
+      console.log("Models loaded successfully");
+      setModelLoad(false);
     })();
   }, []);
 
@@ -176,17 +194,24 @@ export default function AbsenceUI() {
                     {user && user.face ? (
                       <Button
                         type="primary"
-                        loading={loading}
-                        disabled={absen.geoIn ? true : false}
-                        onClick={() => handleAbsence("MASUK")}
+                        loading={modelLoad || loading}
+                        disabled={absen.geoIn ? true : modelLoad ? true : false}
+                        onClick={() => setOpenFace(true)}
                       >
                         MASUK
                       </Button>
                     ) : (
                       <Tooltip title="Kamu belum mendaftarkan Scanface. Daftar dahulu dan absen kembali!">
-                        <Link href={"/profile"}>
-                          <Button type="primary">DAFTARKAN SCANFACE</Button>
-                        </Link>
+                        <Button
+                          type="primary"
+                          onClick={() => setOpenFace(true)}
+                          loading={modelLoad || loading}
+                          disabled={
+                            absen.geoIn ? true : modelLoad ? true : false
+                          }
+                        >
+                          DAFTARKAN SCANFACE
+                        </Button>
                       </Tooltip>
                     )}
                   </>
@@ -207,6 +232,23 @@ export default function AbsenceUI() {
           </div>
         </Spin>
       </Modal>
+      {user && !modelLoad && (
+        <Modal
+          title={user?.face ? "REGISTER FACE" : "VERIFY FACE"}
+          open={openFace}
+          onCancel={() => setOpenFace(false)}
+          footer={[]}
+          style={{ top: 0 }}
+        >
+          <FaceScanner
+            user={user}
+            handleLogin={() => {
+              setOpenFace(false);
+              handleAbsence("MASUK");
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -227,4 +269,166 @@ const defaultAbsence: Absence = {
   createdAt: new Date(),
   updatedAt: new Date(),
   usersId: "",
+};
+
+const FaceScanner = ({
+  user,
+  handleLogin,
+}: {
+  user: Users;
+  handleLogin: Function;
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+      });
+
+      if (videoRef.current) {
+        setStream(stream);
+        setError(null);
+        setResult(null);
+        videoRef.current.srcObject = stream;
+        videoRef.current.style.transform = "scaleX(-1)";
+      }
+    } catch (err) {
+      setError("Unable to access camera");
+      console.error(err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
+  };
+
+  const captureAndVerify = async (register: boolean) => {
+    if (!videoRef.current) return;
+
+    setIsScanning(true);
+    setResult(null);
+    setError(null);
+
+    try {
+      // Ambil frame dari video
+      await new Promise((res) => setTimeout(res, 300));
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx && videoRef.current) {
+        ctx.drawImage(videoRef.current, 0, 0, 640, 480);
+
+        const dataUrl = canvas.toDataURL("image/jpeg");
+
+        // Buat HTMLImageElement dari data URL
+        const img = new Image();
+        img.src = dataUrl;
+
+        // Tunggu sampai image load
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve();
+        });
+
+        if (!img) {
+          setError("No image detected");
+          stopCamera();
+          return;
+        }
+
+        const imageData = await faceapi
+          .detectSingleFace(
+            img,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 512 })
+          )
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+        if (!imageData) {
+          setError("No face detected");
+          stopCamera();
+          return;
+        }
+
+        const response = await fetch("/api/face", {
+          method: register ? "POST" : "PUT",
+          body: JSON.stringify({
+            id: user.id,
+            image: Array.from(imageData.descriptor),
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          setResult(data.msg);
+          user.face = data.face;
+          if (!register) {
+            await handleLogin();
+          }
+        } else {
+          setError(data.msg);
+        }
+      }
+    } catch (err) {
+      setError("Verification failed");
+      console.error(err);
+    } finally {
+      setIsScanning(false);
+      stopCamera();
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        className="border border-gray-300 rounded-lg mb-4"
+        width="640"
+        height="480"
+      />
+      <div className="flex gap-4 mb-4">
+        {!stream && (
+          <Button
+            onClick={() => startCamera()}
+            loading={isScanning}
+            disabled={stream ? true : false}
+          >
+            Start Camera
+          </Button>
+        )}
+        {stream && (
+          <Button
+            onClick={() => captureAndVerify(user.face ? false : true)}
+            disabled={isScanning}
+            loading={isScanning}
+            type="primary"
+          >
+            Verify
+          </Button>
+        )}
+      </div>
+      {result && (
+        <div className="p-4 bg-green-100 border border-green-400 rounded">
+          {result}
+        </div>
+      )}
+
+      {error && (
+        <div className="p-2 bg-red-100 border border-red-400 rounded">
+          {error}
+        </div>
+      )}
+    </div>
+  );
 };
