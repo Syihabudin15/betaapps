@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  const pass = await bcrypt.hash("Tsani182", 10);
+  const pass = await bcrypt.hash("syrel2025", 10);
   let find = await prisma.roles.findFirst({ where: { name: "Developer" } });
   if (!find) {
     find = await prisma.roles.create({
@@ -52,12 +52,12 @@ async function main() {
     where: { username: "developer" },
     update: {},
     create: {
-      name: "DEVELOPER",
-      username: "developer",
+      name: "Lodewijk HF Lantang",
+      username: "oldy",
       password: pass,
-      email: "developer@gmail.com",
+      email: "oldy@gmail.com",
       phone: "08",
-      nip: "00101102025",
+      nip: "RMID122025001",
       face: null,
       principalSalary: 0,
       isActive: true,
